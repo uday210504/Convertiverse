@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Box,
@@ -8,8 +8,7 @@ import {
   Alert,
   AlertIcon,
   AlertDescription,
-  Flex,
-  useToast
+  Flex
 } from '@chakra-ui/react';
 import { FiUpload } from 'react-icons/fi';
 
@@ -27,7 +26,8 @@ import DownloadCard from './components/DownloadCard';
 import useFileUpload from './hooks/useFileUpload';
 
 function App() {
-  const toast = useToast();
+  // State for showing error message
+  const [validationError, setValidationError] = useState(null);
 
   const {
     file,
@@ -43,17 +43,14 @@ function App() {
 
   const handleConvertClick = () => {
     if (!file) {
-      toast({
-        title: 'No file selected',
-        description: 'Please select a JPEG file first',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-        position: 'top'
-      });
+      setValidationError('Please select a JPEG file first');
+      // Auto-hide the error after 3 seconds
+      setTimeout(() => setValidationError(null), 3000);
       return;
     }
 
+    // Clear any previous error
+    setValidationError(null);
     handleConvert();
   };
 
@@ -92,10 +89,10 @@ function App() {
                 label={isLoading ? 'Converting...' : 'Processing...'}
               />
 
-              {error && (
-                <Alert status="error" borderRadius="md">
+              {(error || validationError) && (
+                <Alert status={validationError ? "warning" : "error"} borderRadius="md">
                   <AlertIcon />
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>{validationError || error}</AlertDescription>
                 </Alert>
               )}
 
