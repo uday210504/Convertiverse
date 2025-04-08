@@ -89,6 +89,7 @@ function App() {
                 outputFormats={outputFormats}
                 selectedOutputFormat={selectedOutputFormat}
                 setSelectedOutputFormat={setSelectedOutputFormat}
+                converters={converters}
               />
 
               {file && (

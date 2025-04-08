@@ -10,4 +10,4 @@ restartPolicyType = "on-failure"
 restartPolicyMaxRetries = 5
 
 [nixpacks]
-aptPkgs = ["ffmpeg"]
+aptPkgs = ["ffmpeg", "libavcodec-extra", "libavformat-dev", "libavfilter-dev", "libavdevice-dev"]

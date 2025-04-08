@@ -9,18 +9,37 @@ const crypto = require('crypto');
 // Try to load ffmpeg, but don't fail if it's not available
 let ffmpeg;
 let ffmpegAvailable = false;
-try {
-  ffmpeg = require('fluent-ffmpeg');
-  // Check if ffmpeg is actually available
-  ffmpeg.getAvailableFormats(function(err, formats) {
-    ffmpegAvailable = !err;
-    console.log('FFmpeg available:', ffmpegAvailable);
-    if (err) {
-      console.warn('FFmpeg not available:', err.message);
+
+// Function to check if FFmpeg is available
+const checkFfmpegAvailability = () => {
+  return new Promise((resolve) => {
+    try {
+      const { execSync } = require('child_process');
+      try {
+        // Try to execute ffmpeg -version
+        execSync('ffmpeg -version', { stdio: 'ignore' });
+        console.log('FFmpeg binary is available in PATH');
+        ffmpegAvailable = true;
+        resolve(true);
+      } catch (execError) {
+        console.warn('FFmpeg binary not found in PATH:', execError.message);
+        ffmpegAvailable = false;
+        resolve(false);
+      }
+    } catch (error) {
+      console.warn('Error checking FFmpeg availability:', error.message);
+      ffmpegAvailable = false;
+      resolve(false);
     }
   });
+};
+
+// Load FFmpeg module
+try {
+  ffmpeg = require('fluent-ffmpeg');
+  console.log('fluent-ffmpeg module loaded successfully');
 } catch (error) {
-  console.warn('Failed to load fluent-ffmpeg:', error.message);
+  console.warn('Failed to load fluent-ffmpeg module:', error.message);
 }
 
 // Load converters configuration
@@ -414,20 +433,39 @@ fs.writeFileSync(
   'web: node server.js'
 );
 
+// Start the server after checking FFmpeg availability
+const startServer = async () => {
+  // Check if FFmpeg is available
+  await checkFfmpegAvailability();
+  console.log('FFmpeg availability check completed. FFmpeg available:', ffmpegAvailable);
+
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://convertiverse-production.up.railway.app'
+      : `http://localhost:${PORT}`;
+
+    console.log(`✨ Convertiverse API server running on port ${PORT}`);
+    console.log(`🔗 Health check available at ${baseUrl}/health`);
+    console.log(`🚀 Conversion endpoint available at ${baseUrl}/convert`);
+
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🌐 CORS configured for: ${process.env.CORS_ORIGIN || 'https://convertiverse.vercel.app'}`);
+    } else {
+      console.log(`🌐 CORS configured for local development`);
+    }
+
+    // Log available converters
+    const availableConverters = getAvailableConverters();
+    console.log('Available converter categories:', Object.keys(availableConverters));
+    for (const category in availableConverters) {
+      console.log(`${category} converters:`, availableConverters[category].length);
+    }
+  });
+};
+
 // Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://convertiverse-production.up.railway.app'
-    : `http://localhost:${PORT}`;
-
-  console.log(`✨ Convertiverse API server running on port ${PORT}`);
-  console.log(`🔗 Health check available at ${baseUrl}/health`);
-  console.log(`🚀 Conversion endpoint available at ${baseUrl}/convert`);
-
-  if (process.env.NODE_ENV === 'production') {
-    console.log(`🌐 CORS configured for: ${process.env.CORS_ORIGIN || 'https://convertiverse.vercel.app'}`);
-  } else {
-    console.log(`🌐 CORS configured for local development`);
-  }
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });

@@ -1,13 +1,39 @@
 import React from 'react';
 
-const FormatSelector = ({ 
-  inputFormats, 
-  selectedInputFormat, 
+const FormatSelector = ({
+  inputFormats,
+  selectedInputFormat,
   setSelectedInputFormat,
   outputFormats,
   selectedOutputFormat,
-  setSelectedOutputFormat
+  setSelectedOutputFormat,
+  converters = {}
 }) => {
+  // Function to get the category of a format
+  const getFormatCategory = (format) => {
+    for (const category in converters) {
+      const hasFormat = converters[category].some(
+        c => c.from === format || c.to === format
+      );
+      if (hasFormat) return category;
+    }
+    return null;
+  };
+
+  // Group formats by category
+  const groupFormatsByCategory = (formats) => {
+    const grouped = {};
+
+    formats.forEach(format => {
+      const category = getFormatCategory(format) || 'other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(format);
+    });
+
+    return grouped;
+  };
   return (
     <div className="format-selector-container">
       <div className="format-selector-group">
@@ -22,10 +48,14 @@ const FormatSelector = ({
           {inputFormats.length === 0 ? (
             <option value="">Loading...</option>
           ) : (
-            inputFormats.map((format) => (
-              <option key={format} value={format}>
-                {format}
-              </option>
+            Object.entries(groupFormatsByCategory(inputFormats)).map(([category, formats]) => (
+              <optgroup key={category} label={category.toUpperCase()}>
+                {formats.map(format => (
+                  <option key={format} value={format}>
+                    {format}
+                  </option>
+                ))}
+              </optgroup>
             ))
           )}
         </select>
@@ -45,10 +75,14 @@ const FormatSelector = ({
           {outputFormats.length === 0 ? (
             <option value="">Select input format first</option>
           ) : (
-            outputFormats.map((format) => (
-              <option key={format} value={format}>
-                {format}
-              </option>
+            Object.entries(groupFormatsByCategory(outputFormats)).map(([category, formats]) => (
+              <optgroup key={category} label={category.toUpperCase()}>
+                {formats.map(format => (
+                  <option key={format} value={format}>
+                    {format}
+                  </option>
+                ))}
+              </optgroup>
             ))
           )}
         </select>
