@@ -6,5 +6,7 @@ buildCommand = "cd convertiverse-backend && npm install"
 startCommand = "cd convertiverse-backend && npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 10
+
+# Railway doesn't support these options in this format
+# restartPolicyType = "on-failure"
+# restartPolicyMaxRetries = 10
