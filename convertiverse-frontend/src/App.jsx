@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
+// Import only the components we know work reliably
 import {
   Container,
   Box,
   Button,
   Text,
   VStack,
-  Alert,
-  AlertIcon,
-  AlertDescription,
   Flex
 } from '@chakra-ui/react';
 import { FiUpload } from 'react-icons/fi';
@@ -90,10 +88,16 @@ function App() {
               />
 
               {(error || validationError) && (
-                <Alert status={validationError ? "warning" : "error"} borderRadius="md">
-                  <AlertIcon />
-                  <AlertDescription>{validationError || error}</AlertDescription>
-                </Alert>
+                <Box
+                  className={`custom-alert ${validationError ? 'warning' : 'error'}`}
+                  p={3}
+                  borderRadius="md"
+                  mb={4}
+                >
+                  <Text>
+                    {validationError || error}
+                  </Text>
+                </Box>
               )}
 
               {!downloadUrl && (

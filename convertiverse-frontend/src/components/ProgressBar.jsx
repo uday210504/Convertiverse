@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Progress, Text } from '@chakra-ui/react';
+import { Box, Text } from '@chakra-ui/react';
 
 const ProgressBar = ({ value = 0, isVisible = false, label = 'Processing...' }) => {
   return (
@@ -14,14 +14,12 @@ const ProgressBar = ({ value = 0, isVisible = false, label = 'Processing...' }) 
       <Text mb={1} fontSize="sm" fontWeight="medium">
         {label} {value > 0 ? `(${Math.round(value)}%)` : ''}
       </Text>
-      <Progress
-        value={value}
-        size="sm"
-        colorScheme="blue"
-        borderRadius="full"
-        hasStripe={value < 100}
-        isAnimated={value < 100}
-      />
+      <Box className="custom-progress-container">
+        <Box
+          className={`custom-progress-bar ${value < 100 ? 'animated' : ''}`}
+          style={{ width: `${value}%` }}
+        />
+      </Box>
     </Box>
   );
 };
