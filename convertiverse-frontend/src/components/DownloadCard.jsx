@@ -1,7 +1,15 @@
 import React from 'react';
 import { FiDownload, FiCheck, FiEye } from 'react-icons/fi';
 
-const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', sourceFormat = 'unknown', targetFormat = 'png', onReset }) => {
+const DownloadCard = ({
+  downloadUrl,
+  fileName = 'converted-file.bin',
+  sourceFormat = 'unknown',
+  targetFormat = 'unknown',
+  category = 'unknown',
+  fileSize = 0,
+  onReset
+}) => {
   // Use the production URL if in production, otherwise use the environment variable or localhost
   const API_URL = import.meta.env.PROD
     ? 'https://convertiverse-production.up.railway.app'
@@ -27,7 +35,15 @@ const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', sourceFor
         </p>
 
         <div className="conversion-details">
-          <span className="conversion-badge">{sourceFormat.toUpperCase()} → {targetFormat.toUpperCase()}</span>
+          <span className={`conversion-badge ${category}`}>
+            {sourceFormat.toUpperCase()} → {targetFormat.toUpperCase()}
+          </span>
+          <span className="file-size">
+            {(fileSize / 1024 / 1024).toFixed(2)} MB
+          </span>
+          <span className="file-category">
+            Type: {category.charAt(0).toUpperCase() + category.slice(1)}
+          </span>
         </div>
 
         <div className="button-group">

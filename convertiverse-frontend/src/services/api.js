@@ -12,11 +12,42 @@ const api = axios.create({
   },
 });
 
-export const convertImage = async (file, targetFormat = 'png') => {
+export const getConverters = async () => {
+  try {
+    const response = await api.get('/api/converters');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching converters:', error);
+    throw new Error('Failed to fetch available converters');
+  }
+};
+
+export const getInputFormats = async () => {
+  try {
+    const response = await api.get('/api/formats/input');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching input formats:', error);
+    throw new Error('Failed to fetch supported input formats');
+  }
+};
+
+export const getOutputFormats = async (inputFormat) => {
+  try {
+    const response = await api.get(`/api/formats/output/${inputFormat}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching output formats:', error);
+    throw new Error('Failed to fetch supported output formats');
+  }
+};
+
+export const convertFile = async (file, fromFormat, toFormat) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('targetFormat', targetFormat);
+    formData.append('from', fromFormat);
+    formData.append('to', toFormat);
 
     const response = await api.post('/convert', formData);
     return response.data;

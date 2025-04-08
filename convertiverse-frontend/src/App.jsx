@@ -10,9 +10,10 @@ import Footer from './components/Footer';
 import FileDropzone from './components/FileDropzone';
 import ProgressBar from './components/ProgressBar';
 import DownloadCard from './components/DownloadCard';
+import FormatSelector from './components/FormatSelector';
 
 // Custom hooks
-import useFileUpload from './hooks/useFileUpload';
+import useConverter from './hooks/useConverter';
 
 function App() {
   // State for showing error message
@@ -22,21 +23,31 @@ function App() {
     file,
     preview,
     isLoading,
-    downloadUrl,
     error,
     progress,
-    targetFormat,
-    setTargetFormat,
     conversionResult,
+    inputFormats,
+    selectedInputFormat,
+    setSelectedInputFormat,
+    outputFormats,
+    selectedOutputFormat,
+    setSelectedOutputFormat,
     handleDrop,
     handleConvert,
-    resetState
-  } = useFileUpload();
+    resetState,
+    getConversionCategory
+  } = useConverter();
 
   const handleConvertClick = () => {
     if (!file) {
-      setValidationError('Please select a JPEG file first');
+      setValidationError('Please select a file first');
       // Auto-hide the error after 3 seconds
+      setTimeout(() => setValidationError(null), 3000);
+      return;
+    }
+
+    if (!selectedInputFormat || !selectedOutputFormat) {
+      setValidationError('Please select both input and output formats');
       setTimeout(() => setValidationError(null), 3000);
       return;
     }
@@ -46,6 +57,9 @@ function App() {
     handleConvert();
   };
 
+  // Get the category of the current conversion
+  const conversionCategory = getConversionCategory();
+
   return (
     <ThemeProvider>
       <div className="app-layout">
@@ -54,11 +68,27 @@ function App() {
 
           <div className="converter-card">
             <div className="converter-content">
-              <h2 className="converter-title">Image Format Converter</h2>
+              <h2 className="converter-title">
+                Convertiverse: Universal File Converter
+                {conversionCategory && (
+                  <span className={`file-type-indicator ${conversionCategory}`}>
+                    {conversionCategory}
+                  </span>
+                )}
+              </h2>
 
               <FileDropzone
                 onDrop={handleDrop}
                 preview={preview}
+              />
+
+              <FormatSelector
+                inputFormats={inputFormats}
+                selectedInputFormat={selectedInputFormat}
+                setSelectedInputFormat={setSelectedInputFormat}
+                outputFormats={outputFormats}
+                selectedOutputFormat={selectedOutputFormat}
+                setSelectedOutputFormat={setSelectedOutputFormat}
               />
 
               {file && (
@@ -66,23 +96,6 @@ function App() {
                   <p className="file-info">
                     Selected file: <strong>{file.name}</strong> ({(file.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
-
-                  <div className="format-selector">
-                    <label htmlFor="format-select">Convert to:</label>
-                    <select
-                      id="format-select"
-                      value={targetFormat}
-                      onChange={(e) => setTargetFormat(e.target.value)}
-                      className="format-dropdown"
-                    >
-                      <option value="png">PNG</option>
-                      <option value="jpeg">JPEG</option>
-                      <option value="webp">WEBP</option>
-                      <option value="gif">GIF</option>
-                      <option value="tiff">TIFF</option>
-                      <option value="bmp">BMP</option>
-                    </select>
-                  </div>
                 </div>
               )}
 
@@ -98,7 +111,7 @@ function App() {
                 </div>
               )}
 
-              {!downloadUrl && (
+              {!conversionResult && (
                 <button
                   className={`convert-button ${isLoading ? 'loading' : ''} ${!file || isLoading ? 'disabled' : ''}`}
                   onClick={handleConvertClick}
@@ -108,19 +121,24 @@ function App() {
                     <FiUpload />
                   </span>
                   <span className="button-text">
-                    {isLoading ? 'Converting...' : `Convert to ${targetFormat.toUpperCase()}`}
+                    {isLoading ? 'Converting...' :
+                      selectedInputFormat && selectedOutputFormat ?
+                      `Convert ${selectedInputFormat} to ${selectedOutputFormat}` :
+                      'Convert File'}
                   </span>
                 </button>
               )}
             </div>
           </div>
 
-          {downloadUrl && conversionResult && (
+          {conversionResult && (
             <DownloadCard
-              downloadUrl={downloadUrl}
+              downloadUrl={conversionResult.downloadUrl}
               fileName={conversionResult.originalName}
               sourceFormat={conversionResult.sourceFormat}
               targetFormat={conversionResult.targetFormat}
+              category={conversionResult.category}
+              fileSize={conversionResult.fileSize}
               onReset={resetState}
             />
           )}

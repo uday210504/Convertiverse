@@ -1,10 +1,12 @@
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
+const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const converters = require('./converters.config');
 
 const app = express();
 
@@ -30,6 +32,55 @@ if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
+// Helper function to find a converter based on from and to formats
+function findConverter(from, to) {
+  for (const category in converters) {
+    const converter = converters[category].find(c =>
+      c.from.toUpperCase() === from.toUpperCase() &&
+      c.to.toUpperCase() === to.toUpperCase());
+    if (converter) return converter;
+  }
+  return null;
+}
+
+// Helper function to get all available converters
+function getAvailableConverters() {
+  const available = {};
+
+  for (const category in converters) {
+    available[category] = converters[category].map(c => ({
+      from: c.from,
+      to: c.to
+    }));
+  }
+
+  return available;
+}
+
+// Helper function to get all supported input formats
+function getSupportedInputFormats() {
+  const formats = new Set();
+
+  for (const category in converters) {
+    converters[category].forEach(c => formats.add(c.from));
+  }
+
+  return Array.from(formats);
+}
+
+// Helper function to get all possible output formats for a given input format
+function getPossibleOutputFormats(inputFormat) {
+  const formats = new Set();
+
+  for (const category in converters) {
+    converters[category]
+      .filter(c => c.from.toUpperCase() === inputFormat.toUpperCase())
+      .forEach(c => formats.add(c.to));
+  }
+
+  return Array.from(formats);
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -41,22 +92,28 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter to accept various image formats
+// File filter to accept file types based on the requested conversion
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/bmp',
-    'image/tiff'
-  ];
+  // If no conversion type is specified, accept the file and validate later
+  if (!req.body.from || !req.body.to) {
+    return cb(null, true);
+  }
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Find the converter for the requested conversion
+  const converter = findConverter(req.body.from, req.body.to);
+
+  // If no converter is found, reject the file
+  if (!converter) {
+    return cb(new Error(`Conversion from ${req.body.from} to ${req.body.to} is not supported`), false);
+  }
+
+  // Check if the file's MIME type is supported for this conversion
+  const isValidMimeType = converter.mime.from.includes(file.mimetype);
+
+  if (isValidMimeType) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (JPEG, PNG, GIF, WEBP, BMP, TIFF) are allowed'), false);
+    cb(new Error(`File type ${file.mimetype} is not valid for ${req.body.from} to ${req.body.to} conversion`), false);
   }
 };
 
@@ -70,6 +127,22 @@ const upload = multer({
 
 // Serve static files from the public directory, but don't use this for downloads
 app.use('/static', express.static(publicDir));
+
+// API endpoint to get all available converters
+app.get('/api/converters', (req, res) => {
+  res.json(getAvailableConverters());
+});
+
+// API endpoint to get all supported input formats
+app.get('/api/formats/input', (req, res) => {
+  res.json(getSupportedInputFormats());
+});
+
+// API endpoint to get possible output formats for a given input format
+app.get('/api/formats/output/:inputFormat', (req, res) => {
+  const { inputFormat } = req.params;
+  res.json(getPossibleOutputFormats(inputFormat));
+});
 
 // Download endpoint
 app.get('/download/:filename', (req, res) => {
@@ -134,40 +207,86 @@ app.get('/health', (req, res) => {
 
 // Conversion endpoint
 app.post('/convert', upload.single('file'), async (req, res) => {
-  // Get the target format from the request, default to PNG
-  const targetFormat = req.body.targetFormat || 'png';
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded or file type not supported' });
-    }
-
-    const inputPath = req.file.path;
-
-    // Validate the target format
-    const validFormats = ['png', 'jpeg', 'jpg', 'webp', 'gif', 'tiff', 'bmp'];
-    if (!validFormats.includes(targetFormat)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid format',
-        message: `Format '${targetFormat}' is not supported. Supported formats: ${validFormats.join(', ')}`
+        error: 'No file uploaded or file type not supported'
       });
     }
 
-    // Generate a unique filename with the target extension
-    const outputFilename = `${crypto.randomBytes(16).toString('hex')}.${targetFormat}`;
+    // Get source and target formats from the request
+    const sourceFormat = req.body.from;
+    const targetFormat = req.body.to;
+
+    if (!sourceFormat || !targetFormat) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing parameters',
+        message: 'Both "from" and "to" parameters are required'
+      });
+    }
+
+    // Find the appropriate converter
+    const converter = findConverter(sourceFormat, targetFormat);
+    if (!converter) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported conversion',
+        message: `Conversion from ${sourceFormat} to ${targetFormat} is not supported`
+      });
+    }
+
+    const inputPath = req.file.path;
+    const outputExtension = targetFormat.toLowerCase();
+    const outputFilename = `${crypto.randomBytes(16).toString('hex')}.${outputExtension}`;
     const outputPath = path.join(publicDir, outputFilename);
 
-    // Convert the image to the target format
-    await sharp(inputPath)
-      .toFormat(targetFormat)
-      .toFile(outputPath);
+    // Perform the conversion based on the tool
+    if (converter.tool === 'sharp') {
+      // Image conversion using Sharp
+      await sharp(inputPath)
+        .toFormat(outputExtension)
+        .toFile(outputPath);
+    } else if (converter.tool === 'ffmpeg') {
+      // Video/Audio conversion using FFmpeg
+      await new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+          .output(outputPath)
+          .on('end', () => {
+            resolve();
+          })
+          .on('error', (err) => {
+            console.error('FFmpeg error:', err);
+            reject(err);
+          })
+          .run();
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'Conversion error',
+        message: 'Unknown conversion tool'
+      });
+    }
 
     // Clean up the uploaded file
     fs.unlinkSync(inputPath);
 
     // Prepare the original filename with the new extension
     const originalNameWithoutExt = req.file.originalname.replace(/\.[^/.]+$/, "");
-    const originalNameWithNewExt = originalNameWithoutExt + '.' + targetFormat;
+    const originalNameWithNewExt = originalNameWithoutExt + '.' + targetFormat.toLowerCase();
+
+    // Get the category of the conversion (image, video, audio)
+    let category = 'unknown';
+    for (const cat in converters) {
+      if (converters[cat].some(c =>
+        c.from.toUpperCase() === sourceFormat.toUpperCase() &&
+        c.to.toUpperCase() === targetFormat.toUpperCase())) {
+        category = cat;
+        break;
+      }
+    }
 
     // Send the download URL with the original filename as a query parameter
     res.status(200).json({
@@ -176,8 +295,10 @@ app.post('/convert', upload.single('file'), async (req, res) => {
       downloadUrl: `/download/${outputFilename}?originalName=${encodeURIComponent(originalNameWithNewExt)}`,
       viewUrl: `/static/${outputFilename}`,
       originalName: originalNameWithNewExt,
-      sourceFormat: path.extname(req.file.originalname).substring(1) || 'unknown',
-      targetFormat: targetFormat
+      sourceFormat: sourceFormat,
+      targetFormat: targetFormat,
+      category: category,
+      fileSize: fs.statSync(outputPath).size
     });
   } catch (error) {
     console.error('Conversion error:', error);
