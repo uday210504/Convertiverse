@@ -1,0 +1,22 @@
+{
+  "name": "convertiverse",
+  "version": "1.0.0",
+  "description": "Convertiverse - A file conversion platform",
+  "main": "convertiverse-backend/server.js",
+  "scripts": {
+    "start": "cd convertiverse-backend && npm start",
+    "build": "cd convertiverse-backend && npm install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": [
+    "file",
+    "conversion",
+    "jpeg",
+    "png"
+  ],
+  "author": "",
+  "license": "MIT"
+}

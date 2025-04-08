@@ -1,4 +1,29 @@
-import { extendTheme } from '@chakra-ui/react';
+// Import the theme creator from Chakra UI
+import { ChakraProvider, theme as baseTheme } from '@chakra-ui/react';
+
+// Create a custom theme by extending the base theme
+const extendTheme = (overrides) => {
+  return {
+    ...baseTheme,
+    ...overrides,
+    colors: {
+      ...baseTheme.colors,
+      ...(overrides.colors || {}),
+    },
+    fonts: {
+      ...baseTheme.fonts,
+      ...(overrides.fonts || {}),
+    },
+    components: {
+      ...baseTheme.components,
+      ...(overrides.components || {}),
+    },
+    styles: {
+      ...baseTheme.styles,
+      ...(overrides.styles || {}),
+    },
+  };
+};
 
 const colors = {
   brand: {
