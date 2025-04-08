@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd convertiverse-backend && npm install"
+
+[deploy]
+startCommand = "cd convertiverse-backend && npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
