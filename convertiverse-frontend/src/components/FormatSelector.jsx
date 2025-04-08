@@ -1,39 +1,85 @@
 import React from 'react';
 
 const FormatSelector = ({
-  inputFormats,
-  selectedInputFormat,
+  inputFormats = [],
+  selectedInputFormat = '',
   setSelectedInputFormat,
-  outputFormats,
-  selectedOutputFormat,
+  outputFormats = [],
+  selectedOutputFormat = '',
   setSelectedOutputFormat,
   converters = {}
 }) => {
-  // Function to get the category of a format
-  const getFormatCategory = (format) => {
-    for (const category in converters) {
-      const hasFormat = converters[category].some(
-        c => c.from === format || c.to === format
-      );
-      if (hasFormat) return category;
-    }
-    return null;
-  };
+  // Simple function to render formats
+  const renderFormats = (formats) => {
+    // If we have converters with categories, try to group them
+    if (converters && Object.keys(converters).length > 0) {
+      // Group formats by category
+      const grouped = {};
 
-  // Group formats by category
-  const groupFormatsByCategory = (formats) => {
-    const grouped = {};
-
-    formats.forEach(format => {
-      const category = getFormatCategory(format) || 'other';
-      if (!grouped[category]) {
+      // Initialize with empty arrays for each category
+      Object.keys(converters).forEach(category => {
         grouped[category] = [];
-      }
-      grouped[category].push(format);
-    });
+      });
 
-    return grouped;
+      // Add an 'other' category for formats that don't match
+      grouped['other'] = [];
+
+      // Categorize formats
+      formats.forEach(format => {
+        let found = false;
+
+        // Try to find the format in a category
+        for (const category in converters) {
+          const hasFormat = converters[category].some(
+            c => c.from === format || c.to === format
+          );
+
+          if (hasFormat) {
+            grouped[category].push(format);
+            found = true;
+            break;
+          }
+        }
+
+        // If not found in any category, add to 'other'
+        if (!found) {
+          grouped['other'].push(format);
+        }
+      });
+
+      // Remove empty categories
+      Object.keys(grouped).forEach(category => {
+        if (grouped[category].length === 0) {
+          delete grouped[category];
+        }
+      });
+
+      // If we have grouped formats, render them by category
+      if (Object.keys(grouped).length > 0) {
+        return Object.entries(grouped).map(([category, categoryFormats]) => {
+          if (categoryFormats.length === 0) return null;
+
+          return (
+            <optgroup key={category} label={category.toUpperCase()}>
+              {categoryFormats.map(format => (
+                <option key={format} value={format}>
+                  {format}
+                </option>
+              ))}
+            </optgroup>
+          );
+        });
+      }
+    }
+
+    // Fallback: just render all formats without categories
+    return formats.map(format => (
+      <option key={format} value={format}>
+        {format}
+      </option>
+    ));
   };
+
   return (
     <div className="format-selector-container">
       <div className="format-selector-group">
@@ -48,15 +94,7 @@ const FormatSelector = ({
           {inputFormats.length === 0 ? (
             <option value="">Loading...</option>
           ) : (
-            Object.entries(groupFormatsByCategory(inputFormats)).map(([category, formats]) => (
-              <optgroup key={category} label={category.toUpperCase()}>
-                {formats.map(format => (
-                  <option key={format} value={format}>
-                    {format}
-                  </option>
-                ))}
-              </optgroup>
-            ))
+            renderFormats(inputFormats)
           )}
         </select>
       </div>
@@ -75,15 +113,7 @@ const FormatSelector = ({
           {outputFormats.length === 0 ? (
             <option value="">Select input format first</option>
           ) : (
-            Object.entries(groupFormatsByCategory(outputFormats)).map(([category, formats]) => (
-              <optgroup key={category} label={category.toUpperCase()}>
-                {formats.map(format => (
-                  <option key={format} value={format}>
-                    {format}
-                  </option>
-                ))}
-              </optgroup>
-            ))
+            renderFormats(outputFormats)
           )}
         </select>
       </div>

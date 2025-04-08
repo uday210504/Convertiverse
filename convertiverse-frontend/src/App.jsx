@@ -26,6 +26,7 @@ function App() {
     error,
     progress,
     conversionResult,
+    converters,
     inputFormats,
     selectedInputFormat,
     setSelectedInputFormat,
