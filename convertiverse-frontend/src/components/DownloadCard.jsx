@@ -1,36 +1,30 @@
 import React from 'react';
-import { 
-  Box, 
-  Button, 
-  Flex, 
-  Text, 
-  Icon, 
-  useColorModeValue,
+import {
+  Box,
+  Button,
+  Flex,
+  Text,
+  Icon,
   Link
 } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
 import { FiDownload, FiCheck } from 'react-icons/fi';
-
-const MotionBox = motion(Box);
 
 const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }) => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const fullDownloadUrl = `${API_URL}${downloadUrl}`;
-  
+
   return (
-    <MotionBox
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      bg={useColorModeValue('white', 'gray.700')}
+    <Box
+      className="download-card fade-in"
+      bg="white"
       borderRadius="xl"
       boxShadow="xl"
       p={6}
       mb={6}
     >
-      <Flex 
-        direction="column" 
-        align="center" 
+      <Flex
+        direction="column"
+        align="center"
         textAlign="center"
       >
         <Box
@@ -42,20 +36,20 @@ const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }
         >
           <Icon as={FiCheck} w={6} h={6} />
         </Box>
-        
+
         <Text fontWeight="bold" fontSize="xl" mb={2}>
           Conversion Complete!
         </Text>
-        
+
         <Text color="gray.500" mb={4}>
           Your PNG file is ready for download
         </Text>
-        
+
         <Button
           as={Link}
           href={fullDownloadUrl}
           download={fileName}
-          colorScheme="brand"
+          colorScheme="blue"
           size="lg"
           leftIcon={<FiDownload />}
           mb={3}
@@ -68,7 +62,7 @@ const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }
         >
           Download PNG
         </Button>
-        
+
         <Button
           variant="ghost"
           onClick={onReset}
@@ -77,7 +71,7 @@ const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }
           Convert another file
         </Button>
       </Flex>
-    </MotionBox>
+    </Box>
   );
 };
 

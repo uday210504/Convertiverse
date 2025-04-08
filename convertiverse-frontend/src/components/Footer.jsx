@@ -5,10 +5,10 @@ import { FiHeart } from 'react-icons/fi';
 const Footer = () => {
   return (
     <Box as="footer" py={8} mt="auto">
-      <Flex 
-        direction={{ base: 'column', md: 'row' }} 
-        justify="center" 
-        align="center" 
+      <Flex
+        direction={{ base: 'column', md: 'row' }}
+        justify="center"
+        align="center"
         textAlign="center"
         fontSize="sm"
         color="gray.500"
@@ -22,17 +22,17 @@ const Footer = () => {
         </Text>
         <Text mx={2} display={{ base: 'none', md: 'block' }}>•</Text>
         <Text>
-          <Link 
-            href="#" 
-            color="brand.500" 
+          <Link
+            href="#"
+            color="#0080ff"
             _hover={{ textDecoration: 'underline' }}
           >
             Privacy Policy
           </Link>
           {' | '}
-          <Link 
-            href="#" 
-            color="brand.500" 
+          <Link
+            href="#"
+            color="#0080ff"
             _hover={{ textDecoration: 'underline' }}
           >
             Terms of Service

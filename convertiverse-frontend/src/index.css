@@ -47,6 +47,90 @@ body {
   }
 }
 
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation classes */
+.rotating-icon {
+  animation: rotate 2s linear infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.fade-in-down {
+  animation: fadeInDown 0.5s ease-in-out;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-in-out;
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}
+
+/* Component-specific styles */
+.dropzone-container {
+  transition: transform 0.2s ease;
+}
+
+.dropzone-container:hover {
+  transform: scale(1.02);
+}
+
+.dropzone-container:active {
+  transform: scale(0.98);
+}
+
+.progress-container.hidden {
+  height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+}
+
+.progress-container.visible {
+  height: auto;
+  opacity: 1;
+  margin-bottom: 1rem;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
