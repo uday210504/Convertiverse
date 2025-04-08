@@ -1,11 +1,29 @@
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
-const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+
+// Try to load ffmpeg, but don't fail if it's not available
+let ffmpeg;
+let ffmpegAvailable = false;
+try {
+  ffmpeg = require('fluent-ffmpeg');
+  // Check if ffmpeg is actually available
+  ffmpeg.getAvailableFormats(function(err, formats) {
+    ffmpegAvailable = !err;
+    console.log('FFmpeg available:', ffmpegAvailable);
+    if (err) {
+      console.warn('FFmpeg not available:', err.message);
+    }
+  });
+} catch (error) {
+  console.warn('Failed to load fluent-ffmpeg:', error.message);
+}
+
+// Load converters configuration
 const converters = require('./converters.config');
 
 const app = express();
@@ -38,7 +56,14 @@ function findConverter(from, to) {
     const converter = converters[category].find(c =>
       c.from.toUpperCase() === from.toUpperCase() &&
       c.to.toUpperCase() === to.toUpperCase());
-    if (converter) return converter;
+
+    // Check if the converter is available based on the tool
+    if (converter) {
+      if (converter.tool === 'ffmpeg' && !ffmpegAvailable) {
+        return null; // FFmpeg is not available
+      }
+      return converter;
+    }
   }
   return null;
 }
@@ -48,10 +73,20 @@ function getAvailableConverters() {
   const available = {};
 
   for (const category in converters) {
-    available[category] = converters[category].map(c => ({
-      from: c.from,
-      to: c.to
-    }));
+    // Filter converters based on available tools
+    const availableConverters = converters[category].filter(c => {
+      if (c.tool === 'ffmpeg' && !ffmpegAvailable) {
+        return false; // Skip FFmpeg converters if not available
+      }
+      return true;
+    });
+
+    if (availableConverters.length > 0) {
+      available[category] = availableConverters.map(c => ({
+        from: c.from,
+        to: c.to
+      }));
+    }
   }
 
   return available;
@@ -62,7 +97,10 @@ function getSupportedInputFormats() {
   const formats = new Set();
 
   for (const category in converters) {
-    converters[category].forEach(c => formats.add(c.from));
+    // Filter converters based on available tools
+    converters[category]
+      .filter(c => !(c.tool === 'ffmpeg' && !ffmpegAvailable))
+      .forEach(c => formats.add(c.from));
   }
 
   return Array.from(formats);
@@ -75,6 +113,7 @@ function getPossibleOutputFormats(inputFormat) {
   for (const category in converters) {
     converters[category]
       .filter(c => c.from.toUpperCase() === inputFormat.toUpperCase())
+      .filter(c => !(c.tool === 'ffmpeg' && !ffmpegAvailable))
       .forEach(c => formats.add(c.to));
   }
 
@@ -196,12 +235,32 @@ app.get('/health', (req, res) => {
     ? 'https://convertiverse-production.up.railway.app'
     : `http://localhost:${process.env.PORT || 5000}`;
 
+  // Check if directories exist
+  const uploadsExists = fs.existsSync(uploadsDir);
+  const publicExists = fs.existsSync(publicDir);
+
+  // Get available converters
+  const availableConverters = getAvailableConverters();
+  const supportedFormats = getSupportedInputFormats();
+
   res.status(200).json({
     status: 'ok',
     message: 'Server is running',
     baseUrl: baseUrl,
     environment: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN || 'not set'
+    corsOrigin: process.env.CORS_ORIGIN || 'not set',
+    directories: {
+      uploads: uploadsExists,
+      public: publicExists
+    },
+    ffmpeg: {
+      available: ffmpegAvailable
+    },
+    converters: {
+      available: Object.keys(availableConverters).length > 0,
+      categories: Object.keys(availableConverters),
+      supportedFormats: supportedFormats
+    }
   });
 });
 
@@ -249,19 +308,37 @@ app.post('/convert', upload.single('file'), async (req, res) => {
         .toFormat(outputExtension)
         .toFile(outputPath);
     } else if (converter.tool === 'ffmpeg') {
+      // Check if FFmpeg is available
+      if (!ffmpegAvailable) {
+        return res.status(503).json({
+          success: false,
+          error: 'Service unavailable',
+          message: 'FFmpeg is not available on this server. Only image conversions are supported.'
+        });
+      }
+
       // Video/Audio conversion using FFmpeg
-      await new Promise((resolve, reject) => {
-        ffmpeg(inputPath)
-          .output(outputPath)
-          .on('end', () => {
-            resolve();
-          })
-          .on('error', (err) => {
-            console.error('FFmpeg error:', err);
-            reject(err);
-          })
-          .run();
-      });
+      try {
+        await new Promise((resolve, reject) => {
+          ffmpeg(inputPath)
+            .output(outputPath)
+            .on('end', () => {
+              resolve();
+            })
+            .on('error', (err) => {
+              console.error('FFmpeg error:', err);
+              reject(err);
+            })
+            .run();
+        });
+      } catch (ffmpegError) {
+        console.error('FFmpeg conversion failed:', ffmpegError);
+        return res.status(500).json({
+          success: false,
+          error: 'Conversion error',
+          message: 'Failed to convert file using FFmpeg: ' + ffmpegError.message
+        });
+      }
     } else {
       return res.status(500).json({
         success: false,
