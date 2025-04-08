@@ -10,7 +10,10 @@ import {
 import { FiDownload, FiCheck } from 'react-icons/fi';
 
 const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }) => {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  // Use the production URL if in production, otherwise use the environment variable or localhost
+  const API_URL = import.meta.env.PROD
+    ? 'https://convertiverse-production.up.railway.app'
+    : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
   const fullDownloadUrl = `${API_URL}${downloadUrl}`;
 
   return (

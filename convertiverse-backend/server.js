@@ -10,9 +10,10 @@ const app = express();
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://convertiverse.vercel.app'] 
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: process.env.CORS_ORIGIN ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://convertiverse.vercel.app'
+      : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174']),
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -49,7 +50,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
@@ -62,7 +63,17 @@ app.use(express.static(publicDir));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://convertiverse-production.up.railway.app'
+    : `http://localhost:${process.env.PORT || 5000}`;
+
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is running',
+    baseUrl: baseUrl,
+    environment: process.env.NODE_ENV || 'development',
+    corsOrigin: process.env.CORS_ORIGIN || 'not set'
+  });
 });
 
 // Conversion endpoint
@@ -85,7 +96,7 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     fs.unlinkSync(inputPath);
 
     // Send the download URL
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
       message: 'Conversion successful',
       downloadUrl: `/${outputFilename}`,
@@ -93,10 +104,10 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     });
   } catch (error) {
     console.error('Conversion error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Conversion failed',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -104,21 +115,21 @@ app.post('/convert', upload.single('file'), async (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  
+
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ 
+      return res.status(413).json({
         success: false,
         error: 'File too large',
-        message: 'The uploaded file exceeds the 10MB size limit' 
+        message: 'The uploaded file exceeds the 10MB size limit'
       });
     }
   }
-  
-  res.status(500).json({ 
+
+  res.status(500).json({
     success: false,
     error: 'Server error',
-    message: err.message || 'Something went wrong on the server' 
+    message: err.message || 'Something went wrong on the server'
   });
 });
 
@@ -131,7 +142,17 @@ fs.writeFileSync(
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://convertiverse-production.up.railway.app'
+    : `http://localhost:${PORT}`;
+
   console.log(`✨ Convertiverse API server running on port ${PORT}`);
-  console.log(`🔗 Health check available at http://localhost:${PORT}/health`);
-  console.log(`🚀 Conversion endpoint available at http://localhost:${PORT}/convert`);
+  console.log(`🔗 Health check available at ${baseUrl}/health`);
+  console.log(`🚀 Conversion endpoint available at ${baseUrl}/convert`);
+
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🌐 CORS configured for: ${process.env.CORS_ORIGIN || 'https://convertiverse.vercel.app'}`);
+  } else {
+    console.log(`🌐 CORS configured for local development`);
+  }
 });

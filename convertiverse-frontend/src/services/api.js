@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Use the production URL if in production, otherwise use the environment variable or localhost
+const API_URL = import.meta.env.PROD
+  ? 'https://convertiverse-production.up.railway.app'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -13,12 +16,12 @@ export const convertImage = async (file) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post('/convert', formData);
     return response.data;
   } catch (error) {
     console.error('Error converting image:', error);
-    
+
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
