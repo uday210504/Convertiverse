@@ -1,45 +1,25 @@
 import React from 'react';
-import { Box, Text, Link, Flex, Icon } from '@chakra-ui/react';
 import { FiHeart } from 'react-icons/fi';
 
 const Footer = () => {
   return (
-    <Box as="footer" py={8} mt="auto">
-      <Flex
-        direction={{ base: 'column', md: 'row' }}
-        justify="center"
-        align="center"
-        textAlign="center"
-        fontSize="sm"
-        color="gray.500"
-      >
-        <Text>
+    <footer className="site-footer">
+      <div className="footer-content">
+        <div className="footer-item">
           © {new Date().getFullYear()} Convertiverse. All rights reserved.
-        </Text>
-        <Text mx={2} display={{ base: 'none', md: 'block' }}>•</Text>
-        <Text>
-          Made with <Icon as={FiHeart} color="red.500" mx={1} /> for seamless file conversions
-        </Text>
-        <Text mx={2} display={{ base: 'none', md: 'block' }}>•</Text>
-        <Text>
-          <Link
-            href="#"
-            color="#0080ff"
-            _hover={{ textDecoration: 'underline' }}
-          >
-            Privacy Policy
-          </Link>
+        </div>
+        <div className="footer-separator">•</div>
+        <div className="footer-item">
+          Made with <FiHeart className="heart-icon" /> for seamless file conversions
+        </div>
+        <div className="footer-separator">•</div>
+        <div className="footer-item">
+          <a href="#" className="footer-link">Privacy Policy</a>
           {' | '}
-          <Link
-            href="#"
-            color="#0080ff"
-            _hover={{ textDecoration: 'underline' }}
-          >
-            Terms of Service
-          </Link>
-        </Text>
-      </Flex>
-    </Box>
+          <a href="#" className="footer-link">Terms of Service</a>
+        </div>
+      </div>
+    </footer>
   );
 };
 

@@ -1,13 +1,4 @@
 import React, { useState } from 'react';
-// Import only the components we know work reliably
-import {
-  Container,
-  Box,
-  Button,
-  Text,
-  VStack,
-  Flex
-} from '@chakra-ui/react';
 import { FiUpload } from 'react-icons/fi';
 
 // Custom theme provider
@@ -54,21 +45,13 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Flex direction="column" minH="100vh">
-        <Container maxW="container.md" py={8}>
+      <div className="app-layout">
+        <div className="container">
           <Header />
 
-          <Box
-            bg="white"
-            borderRadius="xl"
-            boxShadow="lg"
-            p={6}
-            mb={6}
-          >
-            <VStack spacing={6} align="stretch">
-              <Text fontSize="xl" fontWeight="bold" textAlign="center">
-                JPEG to PNG Converter
-              </Text>
+          <div className="converter-card">
+            <div className="converter-content">
+              <h2 className="converter-title">JPEG to PNG Converter</h2>
 
               <FileDropzone
                 onDrop={handleDrop}
@@ -76,9 +59,9 @@ function App() {
               />
 
               {file && (
-                <Text fontSize="sm" color="gray.600" textAlign="center">
+                <p className="file-info">
                   Selected file: <strong>{file.name}</strong> ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                </Text>
+                </p>
               )}
 
               <ProgressBar
@@ -88,34 +71,27 @@ function App() {
               />
 
               {(error || validationError) && (
-                <Box
-                  className={`custom-alert ${validationError ? 'warning' : 'error'}`}
-                  p={3}
-                  borderRadius="md"
-                  mb={4}
-                >
-                  <Text>
-                    {validationError || error}
-                  </Text>
-                </Box>
+                <div className={`custom-alert ${validationError ? 'warning' : 'error'}`}>
+                  <p>{validationError || error}</p>
+                </div>
               )}
 
               {!downloadUrl && (
-                <Button
-                  colorScheme="brand"
-                  size="lg"
-                  leftIcon={<FiUpload />}
+                <button
+                  className={`convert-button ${isLoading ? 'loading' : ''} ${!file || isLoading ? 'disabled' : ''}`}
                   onClick={handleConvertClick}
-                  isLoading={isLoading}
-                  loadingText="Converting..."
-                  isDisabled={!file || isLoading}
-                  w="full"
+                  disabled={!file || isLoading}
                 >
-                  Convert to PNG
-                </Button>
+                  <span className="button-icon">
+                    <FiUpload />
+                  </span>
+                  <span className="button-text">
+                    {isLoading ? 'Converting...' : 'Convert to PNG'}
+                  </span>
+                </button>
               )}
-            </VStack>
-          </Box>
+            </div>
+          </div>
 
           {downloadUrl && (
             <DownloadCard
@@ -124,10 +100,10 @@ function App() {
               onReset={resetState}
             />
           )}
-        </Container>
+        </div>
 
         <Footer />
-      </Flex>
+      </div>
     </ThemeProvider>
   );
 }

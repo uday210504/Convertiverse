@@ -1,12 +1,4 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-  Icon,
-  Link
-} from '@chakra-ui/react';
 import { FiDownload, FiCheck } from 'react-icons/fi';
 
 const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }) => {
@@ -17,64 +9,37 @@ const DownloadCard = ({ downloadUrl, fileName = 'converted-image.png', onReset }
   const fullDownloadUrl = `${API_URL}${downloadUrl}`;
 
   return (
-    <Box
-      className="download-card fade-in"
-      bg="white"
-      borderRadius="xl"
-      boxShadow="xl"
-      p={6}
-      mb={6}
-    >
-      <Flex
-        direction="column"
-        align="center"
-        textAlign="center"
-      >
-        <Box
-          bg="green.100"
-          color="green.500"
-          borderRadius="full"
-          p={3}
-          mb={4}
-        >
-          <Icon as={FiCheck} w={6} h={6} />
-        </Box>
+    <div className="download-card fade-in">
+      <div className="download-content">
+        <div className="success-icon">
+          <FiCheck size={24} />
+        </div>
 
-        <Text fontWeight="bold" fontSize="xl" mb={2}>
+        <h3 className="download-title">
           Conversion Complete!
-        </Text>
+        </h3>
 
-        <Text color="gray.500" mb={4}>
+        <p className="download-message">
           Your PNG file is ready for download
-        </Text>
+        </p>
 
-        <Button
-          as={Link}
+        <a
           href={fullDownloadUrl}
           download={fileName}
-          colorScheme="blue"
-          size="lg"
-          leftIcon={<FiDownload />}
-          mb={3}
-          w="full"
-          _hover={{
-            transform: 'translateY(-2px)',
-            boxShadow: 'lg',
-            textDecoration: 'none'
-          }}
+          className="download-button"
         >
-          Download PNG
-        </Button>
+          <FiDownload className="download-icon" />
+          <span>Download PNG</span>
+        </a>
 
-        <Button
-          variant="ghost"
+        <button
+          className="reset-button"
           onClick={onReset}
-          size="sm"
         >
           Convert another file
-        </Button>
-      </Flex>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 };
 
