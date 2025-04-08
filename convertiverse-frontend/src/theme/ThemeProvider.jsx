@@ -1,6 +1,7 @@
-// Create a custom theme without using extendTheme
-import { ChakraProvider } from '@chakra-ui/react';
+import React from 'react';
+import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 
+// Define custom colors
 const colors = {
   brand: {
     50: '#e6f7ff',
@@ -28,11 +29,13 @@ const colors = {
   },
 };
 
+// Define custom fonts
 const fonts = {
   heading: '"Inter", sans-serif',
   body: '"Inter", sans-serif',
 };
 
+// Define custom component styles
 const components = {
   Button: {
     baseStyle: {
@@ -40,44 +43,31 @@ const components = {
       borderRadius: 'md',
     },
     variants: {
-      solid: (props) => ({
-        bg: props.colorScheme === 'brand' ? 'brand.500' : 'accent.500',
+      solid: {
+        bg: 'brand.500',
         color: 'white',
         _hover: {
-          bg: props.colorScheme === 'brand' ? 'brand.600' : 'accent.600',
+          bg: 'brand.600',
           transform: 'translateY(-2px)',
           boxShadow: 'lg',
         },
         transition: 'all 0.2s ease-in-out',
-      }),
-      outline: (props) => ({
-        borderColor: props.colorScheme === 'brand' ? 'brand.500' : 'accent.500',
-        color: props.colorScheme === 'brand' ? 'brand.500' : 'accent.500',
+      },
+      outline: {
+        borderColor: 'brand.500',
+        color: 'brand.500',
         _hover: {
-          bg: props.colorScheme === 'brand' ? 'brand.50' : 'accent.50',
+          bg: 'brand.50',
           transform: 'translateY(-2px)',
           boxShadow: 'md',
         },
         transition: 'all 0.2s ease-in-out',
-      }),
-    },
-  },
-  Card: {
-    baseStyle: {
-      container: {
-        borderRadius: 'xl',
-        boxShadow: 'lg',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease-in-out',
-        _hover: {
-          boxShadow: 'xl',
-          transform: 'translateY(-5px)',
-        },
       },
     },
   },
 };
 
+// Define global styles
 const styles = {
   global: {
     body: {
@@ -87,12 +77,21 @@ const styles = {
   },
 };
 
-// Create a simple theme object without using extendTheme
-const theme = {
+// Create a simple theme configuration
+const themeConfig = {
   colors,
   fonts,
   components,
   styles,
 };
 
-export default theme;
+// ThemeProvider component
+const ThemeProvider = ({ children }) => {
+  return (
+    <ChakraProvider>
+      {children}
+    </ChakraProvider>
+  );
+};
+
+export default ThemeProvider;

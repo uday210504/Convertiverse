@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ChakraProvider,
   Container,
   Box,
   Button,
@@ -14,8 +13,8 @@ import {
 } from '@chakra-ui/react';
 import { FiUpload } from 'react-icons/fi';
 
-// Custom theme
-import theme from './theme';
+// Custom theme provider
+import ThemeProvider from './theme/ThemeProvider';
 
 // Custom components
 import Header from './components/Header';
@@ -59,7 +58,7 @@ function App() {
   };
 
   return (
-    <ChakraProvider theme={theme}>
+    <ThemeProvider>
       <Flex direction="column" minH="100vh">
         <Container maxW="container.md" py={8}>
           <Header />
@@ -128,7 +127,7 @@ function App() {
 
         <Footer />
       </Flex>
-    </ChakraProvider>
+    </ThemeProvider>
   );
 }
 
