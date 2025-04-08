@@ -58,8 +58,26 @@ const upload = multer({
   }
 });
 
-// Serve static files from the public directory
-app.use(express.static(publicDir));
+// Serve static files from the public directory, but don't use this for downloads
+app.use('/static', express.static(publicDir));
+
+// Download endpoint
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(publicDir, filename);
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  // Set headers for download
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', 'image/png');
+
+  // Send the file
+  res.sendFile(filePath);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -99,7 +117,8 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Conversion successful',
-      downloadUrl: `/${outputFilename}`,
+      downloadUrl: `/download/${outputFilename}`,
+      viewUrl: `/static/${outputFilename}`,
       originalName: req.file.originalname.replace(/\.[^/.]+$/, "") + '.png'
     });
   } catch (error) {

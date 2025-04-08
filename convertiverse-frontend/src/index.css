@@ -530,21 +530,37 @@ body {
   margin-bottom: 1rem;
 }
 
-.download-button {
+.button-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .button-group {
+    flex-direction: row;
+  }
+}
+
+.download-button, .view-button {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: var(--primary-color);
-  color: white;
   text-decoration: none;
   border-radius: var(--border-radius-md);
   padding: 0.75rem 1rem;
   font-size: 1rem;
   font-weight: 600;
-  width: 100%;
-  margin-bottom: 0.75rem;
+  flex: 1;
   transition: all 0.2s ease;
+}
+
+.download-button {
+  background-color: var(--primary-color);
+  color: white;
 }
 
 .download-button:hover {
@@ -553,7 +569,18 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.download-icon {
+.view-button {
+  background-color: var(--gray-200);
+  color: var(--gray-800);
+}
+
+.view-button:hover {
+  background-color: var(--gray-300);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.download-icon, .view-icon {
   font-size: 1.25rem;
 }
 
