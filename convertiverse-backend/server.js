@@ -41,12 +41,22 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter to only accept jpeg/jpg files
+// File filter to accept various image formats
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/tiff'
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG/JPG files are allowed'), false);
+    cb(new Error('Only image files (JPEG, PNG, GIF, WEBP, BMP, TIFF) are allowed'), false);
   }
 };
 
@@ -64,6 +74,7 @@ app.use('/static', express.static(publicDir));
 // Download endpoint
 app.get('/download/:filename', (req, res) => {
   const filename = req.params.filename;
+  const originalName = req.query.originalName || filename;
   const filePath = path.join(publicDir, filename);
 
   // Check if file exists
@@ -71,9 +82,36 @@ app.get('/download/:filename', (req, res) => {
     return res.status(404).json({ error: 'File not found' });
   }
 
-  // Set headers for download
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.setHeader('Content-Type', 'image/png');
+  // Determine content type based on file extension
+  const extension = path.extname(filename).toLowerCase();
+  let contentType = 'application/octet-stream';
+
+  switch (extension) {
+    case '.png':
+      contentType = 'image/png';
+      break;
+    case '.jpg':
+    case '.jpeg':
+      contentType = 'image/jpeg';
+      break;
+    case '.gif':
+      contentType = 'image/gif';
+      break;
+    case '.webp':
+      contentType = 'image/webp';
+      break;
+    case '.bmp':
+      contentType = 'image/bmp';
+      break;
+    case '.tiff':
+    case '.tif':
+      contentType = 'image/tiff';
+      break;
+  }
+
+  // Set headers for download with original filename
+  res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
+  res.setHeader('Content-Type', contentType);
 
   // Send the file
   res.sendFile(filePath);
@@ -96,30 +134,50 @@ app.get('/health', (req, res) => {
 
 // Conversion endpoint
 app.post('/convert', upload.single('file'), async (req, res) => {
+  // Get the target format from the request, default to PNG
+  const targetFormat = req.body.targetFormat || 'png';
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded or file type not supported' });
     }
 
     const inputPath = req.file.path;
-    const outputFilename = `${crypto.randomBytes(16).toString('hex')}.png`;
+
+    // Validate the target format
+    const validFormats = ['png', 'jpeg', 'jpg', 'webp', 'gif', 'tiff', 'bmp'];
+    if (!validFormats.includes(targetFormat)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid format',
+        message: `Format '${targetFormat}' is not supported. Supported formats: ${validFormats.join(', ')}`
+      });
+    }
+
+    // Generate a unique filename with the target extension
+    const outputFilename = `${crypto.randomBytes(16).toString('hex')}.${targetFormat}`;
     const outputPath = path.join(publicDir, outputFilename);
 
-    // Convert JPEG to PNG
+    // Convert the image to the target format
     await sharp(inputPath)
-      .toFormat('png')
+      .toFormat(targetFormat)
       .toFile(outputPath);
 
     // Clean up the uploaded file
     fs.unlinkSync(inputPath);
 
-    // Send the download URL
+    // Prepare the original filename with the new extension
+    const originalNameWithoutExt = req.file.originalname.replace(/\.[^/.]+$/, "");
+    const originalNameWithNewExt = originalNameWithoutExt + '.' + targetFormat;
+
+    // Send the download URL with the original filename as a query parameter
     res.status(200).json({
       success: true,
       message: 'Conversion successful',
-      downloadUrl: `/download/${outputFilename}`,
+      downloadUrl: `/download/${outputFilename}?originalName=${encodeURIComponent(originalNameWithNewExt)}`,
       viewUrl: `/static/${outputFilename}`,
-      originalName: req.file.originalname.replace(/\.[^/.]+$/, "") + '.png'
+      originalName: originalNameWithNewExt,
+      sourceFormat: path.extname(req.file.originalname).substring(1) || 'unknown',
+      targetFormat: targetFormat
     });
   } catch (error) {
     console.error('Conversion error:', error);

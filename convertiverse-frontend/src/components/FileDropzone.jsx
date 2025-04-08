@@ -2,7 +2,14 @@ import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FiUploadCloud, FiFile } from 'react-icons/fi';
 
-const FileDropzone = ({ onDrop, preview, accept = { 'image/jpeg': ['.jpg', '.jpeg'] } }) => {
+const FileDropzone = ({ onDrop, preview, accept = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/gif': ['.gif'],
+  'image/webp': ['.webp'],
+  'image/bmp': ['.bmp'],
+  'image/tiff': ['.tiff', '.tif']
+} }) => {
   const onDropAccepted = useCallback((acceptedFiles) => {
     onDrop(acceptedFiles);
   }, [onDrop]);
@@ -55,10 +62,10 @@ const FileDropzone = ({ onDrop, preview, accept = { 'image/jpeg': ['.jpg', '.jpe
             <p className="dropzone-text">
               {isDragActive
                 ? 'Drop the file here...'
-                : 'Drag & drop a JPEG file here, or click to select'}
+                : 'Drag & drop an image file here, or click to select'}
             </p>
             <p className="dropzone-hint">
-              (Only JPEG files up to 10MB are accepted)
+              (Supports JPEG, PNG, GIF, WEBP, BMP, TIFF - up to 10MB)
             </p>
           </div>
         )}

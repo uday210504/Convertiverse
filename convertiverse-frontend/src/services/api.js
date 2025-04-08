@@ -12,10 +12,11 @@ const api = axios.create({
   },
 });
 
-export const convertImage = async (file) => {
+export const convertImage = async (file, targetFormat = 'png') => {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('targetFormat', targetFormat);
 
     const response = await api.post('/convert', formData);
     return response.data;

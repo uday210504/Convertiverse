@@ -25,6 +25,9 @@ function App() {
     downloadUrl,
     error,
     progress,
+    targetFormat,
+    setTargetFormat,
+    conversionResult,
     handleDrop,
     handleConvert,
     resetState
@@ -51,7 +54,7 @@ function App() {
 
           <div className="converter-card">
             <div className="converter-content">
-              <h2 className="converter-title">JPEG to PNG Converter</h2>
+              <h2 className="converter-title">Image Format Converter</h2>
 
               <FileDropzone
                 onDrop={handleDrop}
@@ -59,9 +62,28 @@ function App() {
               />
 
               {file && (
-                <p className="file-info">
-                  Selected file: <strong>{file.name}</strong> ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
+                <div className="file-details">
+                  <p className="file-info">
+                    Selected file: <strong>{file.name}</strong> ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+
+                  <div className="format-selector">
+                    <label htmlFor="format-select">Convert to:</label>
+                    <select
+                      id="format-select"
+                      value={targetFormat}
+                      onChange={(e) => setTargetFormat(e.target.value)}
+                      className="format-dropdown"
+                    >
+                      <option value="png">PNG</option>
+                      <option value="jpeg">JPEG</option>
+                      <option value="webp">WEBP</option>
+                      <option value="gif">GIF</option>
+                      <option value="tiff">TIFF</option>
+                      <option value="bmp">BMP</option>
+                    </select>
+                  </div>
+                </div>
               )}
 
               <ProgressBar
@@ -86,17 +108,19 @@ function App() {
                     <FiUpload />
                   </span>
                   <span className="button-text">
-                    {isLoading ? 'Converting...' : 'Convert to PNG'}
+                    {isLoading ? 'Converting...' : `Convert to ${targetFormat.toUpperCase()}`}
                   </span>
                 </button>
               )}
             </div>
           </div>
 
-          {downloadUrl && (
+          {downloadUrl && conversionResult && (
             <DownloadCard
               downloadUrl={downloadUrl}
-              fileName={file ? file.name.replace(/\.[^/.]+$/, "") + '.png' : 'converted-image.png'}
+              fileName={conversionResult.originalName}
+              sourceFormat={conversionResult.sourceFormat}
+              targetFormat={conversionResult.targetFormat}
               onReset={resetState}
             />
           )}
